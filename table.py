@@ -1,23 +1,26 @@
 import sys
-from utils import R, seedGen, keyGen
-from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-from cryptography.hazmat.primitives import padding
-from cryptography.hazmat.backends import default_backend
+from utils import R, seedGen, keyGen, alphabet, encriptV1, encriptV2
 
 if len(sys.argv) != 4:
 	print("Missing args! Please run the application with the following arguments:")
 	print("python3 {} <password length> <rainbow table size> <output file name>".format(sys.argv[0]))
 	exit()
 
-#Validations
-print("to do")
-
-#Variables
-alphabet = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789?!'#[a-zA-Z0-9?!]
-alphabetLen = len(alphabet)
+#Args
 rainbowFileName = sys.argv[3]
 l = int(sys.argv[1])
 s = int(sys.argv[2])
+
+#Validations (some)
+if l < 1 or l > 16:
+	print("Password length not valid!")
+	exit()
+if s <1:
+	print("Rainbow table size not valid!")
+	exit()
+
+#Variables
+alphabetLen = len(alphabet)
 numRows = int((16*(2**s))/(l*2)) 
 k = int((alphabetLen**l)/numRows)+1
 
@@ -27,7 +30,6 @@ print("Password length: {}".format(l))
 print("s value: {}".format(s))
 print("k value: {}".format(k))
 
-padder = padding.PKCS7(algorithms.AES.block_size).padder()
 #Generate RAINBOW TABLE
 usedSeeds = []
 lastPwds = []
@@ -41,14 +43,15 @@ for row in range(0,numRows):
 	pwd = seed
 	for ite in range(0, k):
 		key = bytes(keyGen(pwd), 'UTF-8')
-		cipher = Cipher(algorithms.AES(key), modes.ECB(), default_backend())
-		encryptor = cipher.encryptor()
-		h = encryptor.update(padder.update(key))
-		pwd = R(ite, h, l, alphabet)
+		#pwd = encriptV1(key, l, ite)#Code provided in classe but not efficient
+		pwd = encriptV2(key, l, ite)
 	lastPwds.append(pwd)
+	print("Interaction {} of {}".format(row, numRows))
 
 #This for is not time consuming
 file = open(rainbowFileName, 'wb')
+file.write(bytes(l, 'UTF-8'))
+file.write(bytes(k, 'UTF-8'))
 for seed, pwd in zip(usedSeeds, lastPwds):
 	file.write(bytes(seed, 'UTF-8'))
 	file.write(bytes(pwd, 'UTF-8'))
