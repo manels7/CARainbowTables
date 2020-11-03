@@ -22,7 +22,7 @@ if s <1:
 #Variables
 alphabetLen = len(alphabet)
 numRows = int((16*(2**s))/(l*2)) 
-k = int((alphabetLen**l)/numRows)+1
+k = (int((alphabetLen**l)/numRows)+1)*2
 
 print("Output file: {}".format(rainbowFileName))
 print("Num rows: {}".format(numRows))
@@ -44,14 +44,15 @@ for row in range(0,numRows):
 	for ite in range(0, k):
 		key = bytes(keyGen(pwd), 'UTF-8')
 		#pwd = encriptV1(key, l, ite)#Code provided in classe but not efficient
-		pwd = encriptV2(key, l, ite)
+		pwd, h = encriptV2(key, l, ite)
 	lastPwds.append(pwd)
 	print("Interaction {} of {}".format(row, numRows))
 
 #This for is not time consuming
 file = open(rainbowFileName, 'wb')
-file.write(bytes(l, 'UTF-8'))
-file.write(bytes(k, 'UTF-8'))
+file.write(bytes(str(l), 'UTF-8'))
+file.write(bytes(str(k), 'UTF-8'))
+file.write(bytes("\n", 'UTF-8'))
 for seed, pwd in zip(usedSeeds, lastPwds):
 	file.write(bytes(seed, 'UTF-8'))
 	file.write(bytes(pwd, 'UTF-8'))
