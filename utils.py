@@ -3,17 +3,47 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.backends import default_backend
 from Crypto.Cipher import AES
+import hashlib 
 
 alphabet = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789?!'#[a-zA-Z0-9?!]
 padder = padding.PKCS7(algorithms.AES.block_size).padder()
 
-def R(ite, hashX, passLen, alphabet): 
-	newHashX = (int.from_bytes(hashX, 'big') + ite)#.to_bytes(len(hashX), 'big')
+def R(k, hashX, passLen, alphabet):
+	value = (int.from_bytes(hashX, 'big') + k) % len(alphabet)**passLen
+	msg = ""
+	for x in range(0, passLen):
+		char = value % len(alphabet)
+		value = int(value / len(alphabet))
+		msg = alphabet[char]+msg
+	return msg
+
+def R2(k, hashX, passLen, alphabet):
+	msg = ""
+	for x in range(0,passLen):
+		s=int(x*(len(hashX)/passLen))
+		f=int((x+1)*(len(hashX)/passLen))
+		newHashX = int.from_bytes(hashX[s:f], 'big')
+		value = (newHashX+k) % len(alphabet)
+		msg += alphabet[value]
+	return msg
+
+def R3(ite, hashX, passLen, alphabet): 
+	newHashX = (int.from_bytes(hashX, 'big') + ite)
 	msg = ""
 	for x in range(0,passLen):
 		shift = int(x*((len(hashX)*8)/passLen))
 		value = newHashX >> shift
 		value = value % len(alphabet)
+		msg += alphabet[value]
+	return msg
+
+def R4(ite, hashX, passLen, alphabet): 
+	newHashX = (int.from_bytes(hashX, 'big'))
+	msg = ""
+	for x in range(0,passLen):
+		shift = int(x*((len(hashX)*8)/passLen))
+		value = newHashX >> shift
+		value = (value*ite) % len(alphabet)
 		msg += alphabet[value]
 	return msg
 

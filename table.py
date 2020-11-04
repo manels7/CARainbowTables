@@ -31,6 +31,7 @@ print("s value: {}".format(s))
 print("k value: {}".format(k))
 
 #Generate RAINBOW TABLE
+#allPwds = set()#Used to count how many passwords the system generated
 usedSeeds = []
 lastPwds = []
 for row in range(0,numRows):
@@ -42,11 +43,12 @@ for row in range(0,numRows):
 
 	pwd = seed
 	for ite in range(0, k):
+		#allPwds.add(pwd)
 		key = bytes(keyGen(pwd), 'UTF-8')
 		#pwd = encriptV1(key, l, ite)#Code provided in classe but not efficient
-		pwd, h = encriptV2(key, l, ite)
+		pwd = encriptV2(key, l, ite)
+	#allPwds.add(pwd)
 	lastPwds.append(pwd)
-	print("Interaction {} of {}".format(row, numRows))
 
 #This for is not time consuming
 file = open(rainbowFileName, 'wb')
@@ -57,3 +59,4 @@ for seed, pwd in zip(usedSeeds, lastPwds):
 	file.write(bytes(seed, 'UTF-8'))
 	file.write(bytes(pwd, 'UTF-8'))
 file.close()
+#print(len(allPwds))
