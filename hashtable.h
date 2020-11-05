@@ -1,10 +1,3 @@
-/*
- * Author : Pierre-Henri Symoneaux
- */
-
-#include <stdlib.h>
-#include <string.h>
-
 //Hashtable element structure
 typedef struct hash_elem_t {
 	struct hash_elem_t* next; // Next element in case of a collision
@@ -36,20 +29,3 @@ hashtable_t* ht_create(unsigned int capacity);
 void* ht_put(hashtable_t* hasht, char* key, void* data);
 
 void* ht_get(hashtable_t* hasht, char* key);
-
-void* ht_remove(hashtable_t* hasht, char* key);
-
-void ht_list_keys(hashtable_t* hasht, char** k, size_t len);
-
-void ht_list_values(hashtable_t* hasht, void** v, size_t len);
-
-hash_elem_t* ht_iterate(hash_elem_it* iterator);
-
-char* ht_iterate_keys(hash_elem_it* iterator);
-
-void* ht_iterate_values(hash_elem_it* iterator);
-
-void ht_clear(hashtable_t* hasht, int free_data);
-
-void ht_destroy(hashtable_t* hasht);
-

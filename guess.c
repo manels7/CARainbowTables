@@ -63,7 +63,6 @@ void keyGen(char* key, char* pwd)
         key[i] = pwd[pwdCounter];
     	pwdCounter++;
     }
-    //key[16] = '\0';
 }
 
 void H(char *out, char *pwd)
@@ -134,7 +133,6 @@ int main(int argc, char *argv[])
 	char pwdReaded[l+1];
 	char startPwd[l+1];
 	char startPwds[rows][l+1], lastPwds[rows][l+1]; //Remove these
-	////hashset_t set = hashset_create();
 	hashtable_t *ht = ht_create(rows);
 
 	while ((c = getc(fp)) != EOF)
@@ -154,7 +152,6 @@ int main(int argc, char *argv[])
 			else
 			{
 				strcpy(lastPwds[index], pwdReaded);
-				////hashset_add(set, lastPwds[index]);
 				ht_put(ht, pwdReaded, startPwds[index]);
 				start = 1;
 				index++;
@@ -168,10 +165,8 @@ int main(int argc, char *argv[])
 	 */
 	char *pos = hash;
 	unsigned char originalHash[KEY_LEN];
-	//unsigned char pwdH[KEY_LEN];
 	for (size_t count = 0; count < sizeof originalHash/sizeof *originalHash; count++) {
 		sscanf(pos, "%2hhx", &originalHash[count]);
-	//	sscanf(pos, "%2hhx", &pwdH[count]);
 		pos += 2;
 	}
 
@@ -202,13 +197,12 @@ int main(int argc, char *argv[])
 				aesOp++;
 			}
 		}
-		
+
 		if(ht_get(ht, pwd))
 		{
 			findings++;
 			char *inPwd = ht_get(ht, pwd);
-			int i;
-			for (i = 0; i<=x; i++)
+			for (int i = 0; i<=x; i++)
 			{
 				
 				H(out, inPwd);
@@ -219,13 +213,12 @@ int main(int argc, char *argv[])
 					R(out, inPwd, i);
 				}
 			}
-			int comp = compareHashes(originalHash, out);
 
-			if(comp == 0)
+			if(compareHashes(originalHash, out) == 0)
 			{
 				printf("%s\n", inPwd);
 				printf("Number of AES Operations: %d\n", aesOp);
-				printf("False positives: %d\n", findings);
+				printf("False positives: %d\n", --findings);
 				return 0;
 			}
 		}

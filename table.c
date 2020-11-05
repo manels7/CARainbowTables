@@ -43,7 +43,6 @@ void keyGen(char* key, char* pwd)
         key[i] = pwd[pwdCounter];
     	pwdCounter++;
     }
-    //key[16] = '\0';
 }
 
 void H(char *out, char *pwd)
@@ -75,10 +74,11 @@ int main(int argc, char *argv[])
 	 */
 	char *programName = argv[0];
 	
-	if (argc != 4)
+	if (argc != 4 && argc != 5)
 	{
 		printf("Missing args! Please run the application with the following arguments:\n");
-		printf("%s <password length> <rainbow table size> <output file name>\n", programName);
+		printf("%s <password length> <rainbow table size> <output file name> ", programName);
+		printf("<split processing (optional)>\n");
 		exit(0);
 	}
 	HashTable *table;
@@ -100,6 +100,21 @@ int main(int argc, char *argv[])
 
 	fp = fopen(rainbowFileName, "wb+");
 	fprintf(fp, "%d%d\n", l, k);
+
+
+	/**
+	 * Split processing
+	 * This is used to create parts of the rainbow table and then
+	 * concat all the outputs files (Carefull)
+	 */
+	if (argc == 5)
+	{
+		int splitR = atoi(argv[4]);
+		rows = rows/splitR;
+		printf("Split processing: %d\n", splitR);
+		printf("New num rows: %ld\n", rows);
+	}
+
 
 	/**
 	 * Rainbow table generation
