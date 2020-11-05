@@ -19,6 +19,7 @@ const char *alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123
 const int alphabetLen = 64;
 int l;
 long rows;
+unsigned __int128 universe;
 
 void getPwd(char* pwd, long pwdIndex)
 {
@@ -42,9 +43,30 @@ void keyGen(char* key, char* pwd)
         key[i] = pwd[pwdCounter];
     	pwdCounter++;
     }
-    key[16] = '\0';
+    //key[16] = '\0';
 }
 
+void H(char *out, char *pwd)
+{
+	//Key generation
+	char key[KEY_LEN];
+	keyGen(key, pwd);
+
+	//Cipher with AES
+	int len;
+	EVP_EncryptInit(ctx, h, key, 0);
+	EVP_EncryptUpdate(ctx, out, &len, key, 16);
+	EVP_CIPHER_CTX_cleanup(ctx);
+}
+
+void R(char *out, char *pwd, int k)
+{
+	//Transform binary into a integer (long long)
+	unsigned __int128 hashValue = *((unsigned __int128*)out); 
+	hashValue += k;
+	int newPwdValue = hashValue % universe;
+	getPwd(pwd, newPwdValue);
+}
 
 int main(int argc, char *argv[])
 {
@@ -68,6 +90,7 @@ int main(int argc, char *argv[])
 	l = atoi(argv[1]);
 	rows = (16 * pow(2, s)) / (l*2);
 	int k = ((pow(alphabetLen, l)/rows) + 1) * 2;
+	universe = (unsigned __int128)pow(alphabetLen,l);
 
 	printf("Output file: %s\n", rainbowFileName);
 	printf("Num rows: %ld\n", rows);
@@ -81,10 +104,8 @@ int main(int argc, char *argv[])
 	/**
 	 * Rainbow table generation
 	 */
-	char pwd[l];
-	char key[16];
-	char out[16];
-	unsigned __int128 universe = (unsigned __int128)pow(alphabetLen,l);
+	char pwd[l+1];
+	char out[KEY_LEN];
 	srand(time(NULL));
 	hashtable_t *ht = ht_create(rows);
 
@@ -104,20 +125,8 @@ int main(int argc, char *argv[])
 		//Compute
 		for(int j = 0; j < k; j++)
 		{
-			//Key generation
-			keyGen(key, pwd);
-
-			//Cipher with AES
-			int len;
-			EVP_EncryptInit(ctx, h, key, 0);
-			EVP_EncryptUpdate(ctx, out, &len, key, 16);
-			EVP_CIPHER_CTX_cleanup(ctx);
-		
-			//Transform binary into a integer (long long)
-			unsigned __int128 *hashValue = (unsigned __int128*)&out; 
-			*hashValue += j;
-			int newPwdValue = *hashValue % universe;
-			getPwd(pwd, newPwdValue);
+			H(out, pwd);
+			R(out, pwd, j);
 		}
 		fprintf(fp, "%s", pwd);
 	}

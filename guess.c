@@ -18,6 +18,7 @@ const char *alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123
 const int alphabetLen = 64;
 int l;
 long rows;
+unsigned __int128 universe;
 
 int getInitalPwd(char startPwds[rows][l+1], char lastPwds[rows][l+1], char* pwd)
 {
@@ -29,6 +30,14 @@ int getInitalPwd(char startPwds[rows][l+1], char lastPwds[rows][l+1], char* pwd)
 			return 1;
 		}
 	}
+	return 0;
+}
+			
+int compareHashes(char *originalHash, char *out)
+{
+	for(int j=0; j<16; j++)
+		if(out[j] != originalHash[j])
+			return 1;
 	return 0;
 }
 
@@ -49,20 +58,34 @@ void keyGen(char* key, char* pwd)
 	int pwdCounter = 0;
  	for (int i = 0; i < 16; i++)
  	{
-		if (pwdCounter == l)
+    	if (pwdCounter == l)
  			pwdCounter = 0;
-		key[i] = pwd[pwdCounter];
-		pwdCounter++;
-	}
-	key[16] = '\0';
+        key[i] = pwd[pwdCounter];
+    	pwdCounter++;
+    }
+    //key[16] = '\0';
 }
-			
-int compareHashes(char *originalHash, char *out)
+
+void H(char *out, char *pwd)
 {
-	for(int j=0; j<16; j++)
-		if(out[j] != originalHash[j])
-			return 1;
-	return 0;
+	//Key generation
+	char key[KEY_LEN];
+	keyGen(key, pwd);
+
+	//Cipher with AES
+	int len;
+	EVP_EncryptInit(ctx, h, key, 0);
+	EVP_EncryptUpdate(ctx, out, &len, key, 16);
+	EVP_CIPHER_CTX_cleanup(ctx);
+}
+
+void R(char *out, char *pwd, int k)
+{
+	//Transform binary into a integer (long long)
+	unsigned __int128 hashValue = *((unsigned __int128*)out); 
+	hashValue += k;
+	int newPwdValue = hashValue % universe;
+	getPwd(pwd, newPwdValue);
 }
 
 int main(int argc, char *argv[])
@@ -86,8 +109,8 @@ int main(int argc, char *argv[])
 	char *hash = argv[2];
 	char *len = malloc(sizeof(char));
 	int k;
-	char key[16];
-	unsigned char out[16];
+	char key[KEY_LEN];
+	unsigned char out[KEY_LEN];
 	int findings = 0, aesOp = 0;
 
 
@@ -104,12 +127,12 @@ int main(int argc, char *argv[])
    	fgetc(fp);//Removing \n that splits header from rainbow table
  
 	rows = (int)pow(alphabetLen,l)/((k/2)-1);
-	char pwd[l];
-	unsigned __int128 universe = (unsigned __int128)pow(alphabetLen,l);
+	char pwd[l+1];
+	universe = (unsigned __int128)pow(alphabetLen,l);
 
 	int c, counter = 0, start = 1, index = 0;
-	char pwdReaded[l];
-	char startPwd[l];
+	char pwdReaded[l+1];
+	char startPwd[l+1];
 	char startPwds[rows][l+1], lastPwds[rows][l+1]; //Remove these
 	////hashset_t set = hashset_create();
 	hashtable_t *ht = ht_create(rows);
@@ -144,11 +167,11 @@ int main(int argc, char *argv[])
 	 * Read hash
 	 */
 	char *pos = hash;
-	unsigned char originalHash[16];
-	unsigned char pwdH[16];
-	for (size_t count = 0; count < sizeof pwdH/sizeof *pwdH; count++) {
+	unsigned char originalHash[KEY_LEN];
+	//unsigned char pwdH[KEY_LEN];
+	for (size_t count = 0; count < sizeof originalHash/sizeof *originalHash; count++) {
 		sscanf(pos, "%2hhx", &originalHash[count]);
-		sscanf(pos, "%2hhx", &pwdH[count]);
+	//	sscanf(pos, "%2hhx", &pwdH[count]);
 		pos += 2;
 	}
 
@@ -165,34 +188,21 @@ int main(int argc, char *argv[])
 	/**
 	 * Password cracking
 	 */
-	unsigned __int128 *pwdHValue;
 	for(int x = k-1; x>=0; x--)
 	{
-		pwdHValue = (unsigned __int128*)&pwdH;
+	 	unsigned char pwdH[strlen(originalHash)];
+	 	strncpy(pwdH, originalHash, strlen(originalHash)); 
 		for (int j = x; j<k; j++)
 		{
-			// R function
-			*pwdHValue += j;
-			int newPwdValue = *pwdHValue % universe;
-			getPwd(pwd, newPwdValue);
+			R(pwdH, pwd, j);
 
 			if(j != k-1)//Does not run in the last cycle
 			{
-				//Key generation
-				keyGen(key, pwd);
-
-				//Cipher with AES
-				int len;
-				EVP_EncryptInit(ctx, h, key, 0);
-				EVP_EncryptUpdate(ctx, out, &len, key, 16);
-				EVP_CIPHER_CTX_cleanup(ctx);
+				H(pwdH, pwd);
 				aesOp++;
-			
-				//Transform binary into a integer (long long)
-				pwdHValue = (unsigned __int128*)&out; 
 			}
 		}
-
+		
 		if(ht_get(ht, pwd))
 		{
 			findings++;
@@ -200,25 +210,18 @@ int main(int argc, char *argv[])
 			int i;
 			for (i = 0; i<=x; i++)
 			{
-				//Key generation
-				keyGen(key, inPwd);
-
-				//Cipher with AES
-				int len;
-				EVP_EncryptInit(ctx, h, key, 0);
-				EVP_EncryptUpdate(ctx, out, &len, key, 16);
-				EVP_CIPHER_CTX_cleanup(ctx);
+				
+				H(out, inPwd);
 				aesOp++;
 				if(i!=x)
 				{
-					pwdHValue = (unsigned __int128*)&out; 
-					*pwdHValue += i;
-
-					int newPwdValue = *pwdHValue % universe;
-					getPwd(inPwd, newPwdValue);
+					
+					R(out, inPwd, i);
 				}
 			}
-			if(compareHashes(originalHash, out) == 0)
+			int comp = compareHashes(originalHash, out);
+
+			if(comp == 0)
 			{
 				printf("%s\n", inPwd);
 				printf("Number of AES Operations: %d\n", aesOp);
