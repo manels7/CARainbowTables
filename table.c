@@ -9,7 +9,8 @@
 #include <openssl/evp.h>
 #include <openssl/aes.h>
 #include <openssl/rand.h>
-#include "hashset.h"
+#include <collectc/hashtable.h>
+#include "hashtable.h"
 #define  KEY_LEN  16 /*  bytes*/
 
 const EVP_CIPHER *h;
@@ -58,6 +59,7 @@ int main(int argc, char *argv[])
 		printf("%s <password length> <rainbow table size> <output file name>\n", programName);
 		exit(0);
 	}
+	HashTable *table;
 	FILE *fp;
 	h = EVP_aes_128_ecb();
 	ctx = EVP_CIPHER_CTX_new();
@@ -84,22 +86,20 @@ int main(int argc, char *argv[])
 	char out[16];
 	unsigned __int128 universe = (unsigned __int128)pow(alphabetLen,l);
 	srand(time(NULL));
-	hashset_t set = hashset_create();
+	hashtable_t *ht = ht_create(rows);
 
 	for(int i = 0; i < rows; i++)
 	{
 		//Generate Seed		
 		while (1)
 		{	
-			int seed = rand() % (long)universe; 
+			int seed = rand() % (long)universe;
 			getPwd(pwd, seed);
-			if (hashset_is_member(set, pwd) == 0)
+			if(!ht_get(ht, pwd))
 				break;
 		}
-		char *pwdI = malloc (sizeof(pwd));
-		strcpy(pwdI, pwd);
-		hashset_add(set, pwdI);
 		fprintf(fp, "%s", pwd);
+		ht_put(ht, pwd, pwd);
 
 		//Compute
 		for(int j = 0; j < k; j++)
@@ -121,5 +121,6 @@ int main(int argc, char *argv[])
 		}
 		fprintf(fp, "%s", pwd);
 	}
-}
+	fclose(fp);
+}	
 
