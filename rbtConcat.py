@@ -15,7 +15,7 @@ for file in glob.glob('{}/{}*'.format(rbtLocation,rbtPattern)):
 	rbtFiles.append(file)
 
 FIRST_READ = True
-fp = open('{}/{}concat'.format(rbtLocation,rbtPattern), 'wb')
+fp = open('{}/{}.concat'.format(rbtLocation,rbtPattern[:-1]), 'wb')
 
 
 for fileR in rbtFiles:
@@ -53,4 +53,5 @@ for fileR in rbtFiles:
 
 			if byte == b"":
 				break
+	file.close()
 fp.close()
