@@ -80,7 +80,6 @@ int main(int argc, char *argv[])
 		printf("<split processing (optional)>\n");
 		exit(0);
 	}
-	HashTable *table;
 	FILE *fp;
 	h = EVP_aes_128_ecb();
 	ctx = EVP_CIPHER_CTX_new();
