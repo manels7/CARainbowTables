@@ -22,14 +22,15 @@ k = b''
 for fileR in rbtFiles:
 	with open(fileR, 'rb') as file:
 		print(fileR)
+		l = int(file.read(1))
+		while True:
+			byte = file.read(1)
+			if byte == b"\n":
+				break
+			k += byte
+		k = int(k)
+			
 		if FIRST_READ:
-			l = int(file.read(1))
-			while True:
-				byte = file.read(1)
-				if byte == b"\n":
-					break
-				k += byte
-			k = int(k)
 			fp.write(bytes(str(l), 'UTF-8'))
 			fp.write(bytes(str(k), 'UTF-8'))
 			fp.write(bytes("\n", 'UTF-8'))
