@@ -19,19 +19,6 @@ const int alphabetLen = 64;
 int l;
 long rows;
 unsigned __int128 universe;
-
-int getInitalPwd(char startPwds[rows][l+1], char lastPwds[rows][l+1], char* pwd)
-{
-	for(int i = 0; i<rows; i++)
-	{
-		if(strcmp(startPwds[i], lastPwds[i]) == 0)
-		{
-			strcpy(pwd, startPwds[i]);
-			return 1;
-		}
-	}
-	return 0;
-}
 			
 int compareHashes(char *originalHash, char *out)
 {
@@ -94,10 +81,11 @@ int main(int argc, char *argv[])
 	 */
 	char *programName = argv[0];
 	
-	if (argc != 3)
+	if (argc != 3 && argc != 4)
 	{
 		printf("Missing args! Please run the application with the following arguments:\n");
-		printf("%s <rainbow file> <hash>\n", programName);
+		printf("%s <rainbow file> <hash> ", programName);
+		printf("<split processing (optional)>\n");
 		exit(0);
 	}
 
@@ -125,16 +113,26 @@ int main(int argc, char *argv[])
    	fscanf(fp,"%d", &k);
    	fgetc(fp);//Removing \n that splits header from rainbow table
  
-	rows = (int)pow(alphabetLen,l)/((k/2)-1);
+
+ 	/**
+	 * Split processing
+	 * This is used to create parts of the rainbow table and then
+	 * concat all the outputs files (Carefull)
+	 */
+
+	rows = (long)pow(alphabetLen,l)/((k/2)-1);
+	if (argc == 4)
+	{
+		int splitR = atoi(argv[3]);
+		rows = rows/splitR;
+	}
 	char pwd[l+1];
 	universe = (unsigned __int128)pow(alphabetLen,l);
-
 	int c, counter = 0, start = 1, index = 0;
 	char pwdReaded[l+1];
 	char startPwd[l+1];
-	char startPwds[rows][l+1], lastPwds[rows][l+1]; //Remove these
 	hashtable_t *ht = ht_create(rows);
-
+	char startPwds[rows][l+1], lastPwds[rows][l+1]; //Remove these
 	while ((c = getc(fp)) != EOF)
 	{
 		pwdReaded[counter] = (char)c;
@@ -153,6 +151,7 @@ int main(int argc, char *argv[])
 			{
 				strcpy(lastPwds[index], pwdReaded);
 				ht_put(ht, pwdReaded, startPwds[index]);
+				//ht_put(ht, pwdReaded, startPwd);
 				start = 1;
 				index++;
 			}
@@ -198,29 +197,26 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		if(ht_get(ht, pwd))
+		char *inPwd = ht_get(ht, pwd);
+		if(inPwd != NULL)
 		{
-			findings++;
-			char *inPwd = ht_get(ht, pwd);
 			for (int i = 0; i<=x; i++)
 			{
-				
 				H(out, inPwd);
 				aesOp++;
 				if(i!=x)
-				{
-					
 					R(out, inPwd, i);
-				}
 			}
+			//printf("%s\n",inPwd);
 
 			if(compareHashes(originalHash, out) == 0)
 			{
 				printf("%s\n", inPwd);
 				printf("Number of AES Operations: %d\n", aesOp);
-				printf("False positives: %d\n", --findings);
+				printf("False positives: %d\n", findings);
 				return 0;
 			}
+			findings++;
 		}
 	}
 	printf("Not found!\n");
