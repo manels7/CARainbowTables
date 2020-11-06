@@ -132,7 +132,14 @@ int main(int argc, char *argv[])
 	char pwdReaded[l+1];
 	char startPwd[l+1];
 	hashtable_t *ht = ht_create(rows);
-	char startPwds[rows][l+1], lastPwds[rows][l+1]; //Remove these
+	char **startPwds = malloc(rows*sizeof(char*));
+	char **lastPwds = malloc(rows*sizeof(char*));
+	
+	for(int i = 0; i < rows; i++){
+		startPwds[i] = malloc((l+1)*sizeof(char));
+		lastPwds[i] = malloc((l+1)*sizeof(char));
+	}
+
 	while ((c = getc(fp)) != EOF)
 	{
 		pwdReaded[counter] = (char)c;
@@ -144,14 +151,12 @@ int main(int argc, char *argv[])
 			if(start == 1)
 			{
 				strcpy(startPwds[index], pwdReaded);
-				strcpy(startPwd, pwdReaded);
 				start = 0;
 			}
 			else
 			{
 				strcpy(lastPwds[index], pwdReaded);
 				ht_put(ht, pwdReaded, startPwds[index]);
-				//ht_put(ht, pwdReaded, startPwd);
 				start = 1;
 				index++;
 			}
