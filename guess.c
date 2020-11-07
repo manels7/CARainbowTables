@@ -28,13 +28,13 @@ int compareHashes(char *originalHash, char *out)
 	return 0;
 }
 
-void getPwd(char* pwd, long pwdIndex)
+void getPwd(char* pwd, unsigned long long pwdIndex)
 {
-	long value = pwdIndex;
+	unsigned long long value = pwdIndex;
 	for(int x = l-1; x >= 0; x--)
 	{
 		int charIndex = value % alphabetLen;
-		value = (long)value / alphabetLen;
+		value = (unsigned long long)value / alphabetLen;
 		pwd[x] = alphabet[charIndex];
 	}
 	pwd[l] = '\0';
@@ -70,7 +70,7 @@ void R(char *out, char *pwd, int k)
 	//Transform binary into a integer (long long)
 	unsigned __int128 hashValue = *((unsigned __int128*)out); 
 	hashValue += k;
-	int newPwdValue = hashValue % universe;
+	unsigned long long newPwdValue = hashValue % universe;
 	getPwd(pwd, newPwdValue);
 }
 
