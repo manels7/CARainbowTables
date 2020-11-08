@@ -85,7 +85,7 @@ int main(int argc, char *argv[])
 	{
 		printf("Missing args! Please run the application with the following arguments:\n");
 		printf("%s <rainbow file> <hash> ", programName);
-		printf("<split processing (optional)>\n");
+		printf("<split processing (optional, if == 1, the output will be in matrix)>\n");
 		exit(0);
 	}
 
@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
 	char key[KEY_LEN];
 	unsigned char out[KEY_LEN];
 	int findings = 0, aesOp = 0;
-
+	int MATRIX = 0;
 
 	/**
 	 * Read rainbow table
@@ -124,7 +124,10 @@ int main(int argc, char *argv[])
 	if (argc == 4)
 	{
 		int splitR = atoi(argv[3]);
-		rows = rows/splitR;
+		if(splitR == 1)//Used to change the outputs
+			MATRIX = 1;
+		else
+			rows = rows/splitR;
 	}
 	char pwd[l+1];
 	universe = (unsigned __int128)pow(alphabetLen,l);
@@ -178,11 +181,13 @@ int main(int argc, char *argv[])
 	/**
 	 * Print Readed Variables
 	 */
-	printf("Input file: %s\n", rainbowFileName);
-	printf("Num rows: %ld\n", rows);
-	printf("Password length: %d\n", l);
-	printf("k value: %d\n", k);
-
+	if (MATRIX == 0)
+	{
+		printf("Input file: %s\n", rainbowFileName);
+		printf("Num rows: %ld\n", rows);
+		printf("Password length: %d\n", l);
+		printf("k value: %d\n", k);
+	}
 
 	/**
 	 * Password cracking
@@ -216,16 +221,26 @@ int main(int argc, char *argv[])
 
 			if(compareHashes(originalHash, out) == 0)
 			{
-				printf("%s\n", inPwd);
-				printf("Number of AES Operations: %d\n", aesOp);
-				printf("False positives: %d\n", findings);
+				if (MATRIX == 0)
+				{
+					printf("%s\n", inPwd);
+					printf("Number of AES Operations: %d\n", aesOp);
+					printf("False positives: %d\n", findings);
+				}
+				else
+					printf("%d\t%d\t", aesOp, findings);
 				return 0;
 			}
 			findings++;
 		}
 	}
-	printf("Not found!\n");
-	printf("Number of AES Operations: %d\n", aesOp);
-	printf("False positives: %d\n", findings);
+	if (MATRIX == 0)
+	{
+		printf("Not found!\n");
+		printf("Number of AES Operations: %d\n", aesOp);
+		printf("False positives: %d\n", findings);
+	}
+	else
+		printf("[%d\t%d]\t", aesOp, findings);
 }
 
